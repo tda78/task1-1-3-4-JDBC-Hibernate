@@ -21,6 +21,10 @@ public class UserServiceImpl implements UserService {
         dao.saveUser(name, lastName, age);
     }
 
+    public void saveUser(User user){
+        saveUser(user.getName(), user.getLastName(),user.getAge());
+    }
+
     public void removeUserById(long id) {
         dao.removeUserById(id);
     }

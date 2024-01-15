@@ -3,21 +3,16 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
     private Connection connection;
-    public UserDaoJDBCImpl() {
-         connection = Util.getConnection();
-    }
+
 
     public void createUsersTable() {
-       execute("create table users\n" +
+        execute("create table users\n" +
                 "(\n" +
                 "    id        int auto_increment,\n" +
                 "    name      VARCHAR(20) not null,\n" +
@@ -30,15 +25,18 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void dropUsersTable() {
-      execute("drop table users");
+        execute("drop table users");
 
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        try(Statement statement = connection.createStatement();){
-            statement.executeUpdate("insert into users (name, lastName, age) values ('"
-            + name + "','" + lastName + "','" + age + "')");
-        }catch (SQLException e){
+        try (Connection connection = Util.getConnection()) {
+            PreparedStatement statement = connection.prepareStatement("insert into users (name, lastName, age) values (?, ?, ?)");
+            statement.setString(1, name);
+            statement.setString(2, lastName);
+            statement.setByte(3, age);
+            statement.executeUpdate();
+        } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
 
@@ -46,40 +44,48 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void removeUserById(long id) {
-        try(Statement statement = connection.createStatement()){
-            statement.executeUpdate("delete from users where id='"
-            + id + "')");
-        }catch (SQLException e){
+        try (Connection connection = Util.getConnection()) {
+            PreparedStatement statement = connection.prepareStatement("delete from users where id=?");
+            statement.setLong(1, id);
+            statement.executeUpdate();
+        } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
     public List<User> getAllUsers() {
         List<User> result = new ArrayList<>();
-        try(Statement statement = connection.createStatement();){
+        try (Connection connection = Util.getConnection()) {
+            Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery("select * from users");
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 result.add(new User(resultSet.getLong(1),
                         resultSet.getString(2),
                         resultSet.getString(3),
                         resultSet.getByte(4)));
+
             }
-        }catch (SQLException e){
+            statement.close();
+        } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
         return result;
     }
 
     public void cleanUsersTable() {
-        try(Statement statement = connection.createStatement();){
+        try (Connection connection = Util.getConnection()) {
+            Statement statement = connection.createStatement();
             statement.executeUpdate("delete from users");
-        }catch (SQLException e){
+            statement.close();
+        } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
 
     }
+
     private void execute(String sql) {
-        try(Statement statement = connection.createStatement();){
+        try (Connection connection = Util.getConnection()) {
+            Statement statement = connection.createStatement();
             statement.execute(sql);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
